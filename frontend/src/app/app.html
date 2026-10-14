@@ -1,9 +1,15 @@
 <header>
   <h1>iRoute · Comercios</h1>
-  <nav>
-    <a routerLink="/upload" routerLinkActive="active">Cargar</a>
-    <a routerLink="/process" routerLinkActive="active">Procesar</a>
-    <a routerLink="/errors" routerLinkActive="active">Errores</a>
-  </nav>
+  @if (auth.isLoggedIn()) {
+    <nav>
+      <a routerLink="/upload" routerLinkActive="active">Cargar</a>
+      <a routerLink="/process" routerLinkActive="active">Procesar</a>
+      <a routerLink="/errors" routerLinkActive="active">Errores</a>
+    </nav>
+    <div class="user">
+      <span>{{ auth.username() }}</span>
+      <button (click)="auth.logout()">Salir</button>
+    </div>
+  }
 </header>
 <main><router-outlet /></main>

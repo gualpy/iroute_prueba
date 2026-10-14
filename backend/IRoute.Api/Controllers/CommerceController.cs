@@ -2,10 +2,12 @@ using System.Text.RegularExpressions;
 using IRoute.Api.Models;
 using IRoute.Api.Repositories;
 using IRoute.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace IRoute.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public partial class CommerceController(

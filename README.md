@@ -46,7 +46,14 @@ docker cp database/01_schema.sql iroute-sql:/tmp/
 docker exec iroute-sql /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'IRoute_Pass123!' -b -i /tmp/01_schema.sql
 ```
 
-Esto crea la base `iroute`, las tablas `commerce` y `commerce_quarantine`, y los stored procedures `sp_create_commerce` y `sp_process_commerce`.
+Después carga el esquema de autenticación:
+
+```bash
+docker cp database/02_auth.sql iroute-sql:/tmp/
+docker exec iroute-sql /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'IRoute_Pass123!' -b -i /tmp/02_auth.sql
+```
+
+Esto crea la base `iroute`, las tablas `commerce`, `commerce_quarantine` y `app_user`, y los stored procedures `sp_create_commerce`, `sp_process_commerce`, `sp_get_user_hash` y `sp_ensure_user`.
 
 ### 2. API
 
@@ -69,6 +76,7 @@ Abre `http://localhost:4200`.
 
 ## Cómo probar
 
+0. **Login:** ingresa con usuario `admin` y contraseña `admin123` (la API crea este usuario al iniciar si no existe).
 1. **Cargar:** selecciona `samples/commerce_13102026.csv`, revisa la previsualización y pulsa *Enviar al servidor*. Debe cargar 7 registros.
 2. **Procesar:** elige la fecha `13/10/2026` y pulsa *Procesar*. Debe enviar 4 registros a cuarentena.
 3. **Errores:** lista los 4 registros rechazados con su motivo.
@@ -91,8 +99,11 @@ El enunciado no incluía el CSV, por lo que definí estas columnas básicas.
 
 ## API REST
 
+Los endpoints de `/api/commerce` requieren el header `Authorization: Bearer <token>`.
+
 | Método | Ruta | Descripción |
 |---|---|---|
+| POST | `/api/auth/login` | Body `{ "username", "password" }`. Retorna `{ token, expiresAt, username }` (JWT) o 401. Es el único endpoint público |
 | POST | `/api/commerce/upload` | Recibe el `.csv` (form-data, campo `file`). Retorna 400 si está vacío o el nombre es inválido. Inserta con `sp_create_commerce`. Respuesta: `{ "inserted": n }` |
 | POST | `/api/commerce/process` | Body `{ "processDate": "yyyy-MM-dd" }`. Ejecuta `sp_process_commerce`. Respuesta: `{ "quarantined": n }` |
 | GET | `/api/commerce/quarantine` | Lista los registros de `commerce_quarantine` con su `motivo` |
@@ -115,12 +126,9 @@ Los registros que no cumplen se eliminan de `commerce` y se registran en `commer
 - **Carga masiva:** `sp_create_commerce` recibe todas las filas en un parámetro de tipo tabla (`commerce_type`). Es una sola llamada a la base por archivo, en vez de una por fila.
 - **Proceso transaccional:** mover a cuarentena y borrar de `commerce` ocurre en una sola transacción.
 - **Capas en la API:** controlador → parser CSV (CsvHelper) → repositorio (ADO.NET con stored procedures).
+- **Autenticación:** JWT. Las contraseñas se guardan con PBKDF2 (salt + 100 000 iteraciones). En Angular, un guard protege las rutas y un interceptor agrega el token a cada petición y cierra sesión ante un 401. El token se guarda en `sessionStorage`.
 - **Previsualización en el cliente:** el front lee el CSV en el navegador y valida nombre y contenido antes de enviarlo.
 
 ## Configuración
 
-Connection string en `backend/IRoute.Api/appsettings.json`. Las credenciales (`sa` / `IRoute_Pass123!`) son solo para desarrollo local.
-
-## Pendiente
-
-- Pantalla de inicio de sesión (opcional en el enunciado).
+Connection string y clave JWT en `backend/IRoute.Api/appsettings.json`. Las credenciales (`sa` / `IRoute_Pass123!`, `admin` / `admin123`) y la clave JWT son solo para desarrollo local; en producción deben venir de variables de entorno o un gestor de secretos.
