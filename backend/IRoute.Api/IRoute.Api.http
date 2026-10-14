@@ -1,0 +1,6 @@
+@IRoute.Api_HostAddress = http://localhost:5009
+
+GET {{IRoute.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

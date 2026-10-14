@@ -1,0 +1,11 @@
+/* You can add global styles to this file, and also import other style files */
+
+body { font-family: system-ui, sans-serif; margin: 0; color: #222; }
+button { padding: .45rem 1rem; margin-left: .5rem; cursor: pointer; }
+.scroll { overflow: auto; max-height: 60vh; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { border: 1px solid #ddd; padding: .35rem .6rem; text-align: left; }
+th { background: #f0f3f7; position: sticky; top: 0; }
+.msg { padding: .5rem .75rem; border-radius: 4px; }
+.msg.ok { background: #e6f4ea; color: #1e6b34; }
+.msg.err { background: #fdecea; color: #a12622; }

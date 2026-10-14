@@ -1,0 +1,8 @@
+pc_numdoc,pc_tipodoc,pc_nomcomred,pc_razonsocial,pc_direccion,pc_telefono,pc_email,pc_processdate
+20123456789,RUC,Bodega Lucia,Bodega Lucia SAC,Av. Lima 123,987654321,lucia@mail.com,2026-10-13
+20987654321,RUC,Farmacia Sol,Farmacia Sol SRL,Jr. Cusco 456,912345678,sol@mail.com,2026-10-13
+20ABC456789,RUC,Ferreteria Norte,Ferreteria Norte SA,Calle 5 #20,955555555,norte@mail.com,2026-10-13
+20-111-222,RUC,Panaderia Oro,Panaderia Oro EIRL,Av. Sur 77,944444444,oro@mail.com,2026-10-13
+20333444555,RUC,,Sin Nombre SAC,Av. Este 9,933333333,sn@mail.com,2026-10-13
+,RUC,Libreria Sur,Libreria Sur SAC,Jr. Puno 88,922222222,ls@mail.com,2026-10-13
+20777888999,RUC,Cafe Andino,Cafe Andino SAC,Av. Arequipa 10,911111111,cafe@mail.com,2026-10-12
