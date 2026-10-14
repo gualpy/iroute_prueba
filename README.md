@@ -10,14 +10,14 @@ Aplicación web para cargar archivos `commerce_DDMMYYYY.csv`, procesarlos por fe
 
 Desarrollé la práctica en **Linux**, donde SQL Server no se instala de forma nativa como en Windows. Por eso corro SQL Server en un contenedor **Docker** (`docker-compose.yml`), que se comporta como una instancia local en `localhost,1433`. La API usa autenticación SQL (`sa`), no autenticación de Windows, así que funciona igual en cualquier sistema operativo.
 
-Si ya tienes una instancia local de SQL Server (por ejemplo en Windows), no necesitas Docker: ejecuta `database/01_schema.sql` en ella y cambia el connection string en `backend/IRoute.Api/appsettings.json`.
+Si ya tienes una instancia local de SQL Server (por ejemplo en Windows), no necesitas Docker: ejecuta `database/01_schema.sql` y luego `database/02_auth.sql` en ella, y cambia el connection string en `backend/IRoute.Api/appsettings.json`.
 
 ## Estructura
 
 ```
 backend/IRoute.Api/   API REST (.NET 8)
 frontend/             Aplicación Angular
-database/             Script SQL (tablas, tipo tabla y stored procedures)
+database/             Scripts SQL (01: tablas y stored procedures, 02: usuarios)
 samples/              CSV de ejemplo
 docker-compose.yml    SQL Server en contenedor
 ```
@@ -39,18 +39,13 @@ Abre tres terminales, desde la raíz del repositorio.
 docker compose up -d
 ```
 
-Espera unos segundos a que SQL Server arranque y carga el esquema (solo la primera vez):
+Espera unos segundos a que SQL Server arranque y carga los scripts (solo la primera vez, el orden importa):
 
 ```bash
-docker cp database/01_schema.sql iroute-sql:/tmp/
-docker exec iroute-sql /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'IRoute_Pass123!' -b -i /tmp/01_schema.sql
-```
-
-Después carga el esquema de autenticación:
-
-```bash
-docker cp database/02_auth.sql iroute-sql:/tmp/
-docker exec iroute-sql /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'IRoute_Pass123!' -b -i /tmp/02_auth.sql
+for f in 01_schema 02_auth; do
+  docker cp database/$f.sql iroute-sql:/tmp/
+  docker exec iroute-sql /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'IRoute_Pass123!' -b -i /tmp/$f.sql
+done
 ```
 
 Esto crea la base `iroute`, las tablas `commerce`, `commerce_quarantine` y `app_user`, y los stored procedures `sp_create_commerce`, `sp_process_commerce`, `sp_get_user_hash` y `sp_ensure_user`.
@@ -62,7 +57,7 @@ cd backend/IRoute.Api
 dotnet run --launch-profile http
 ```
 
-La API queda en `http://localhost:5009` y Swagger en `http://localhost:5009/swagger`.
+La API queda en `http://localhost:5009` y Swagger en `http://localhost:5009/swagger`. Inicia la API **después** de cargar los scripts SQL, porque al arrancar crea el usuario `admin`.
 
 ### 3. Front End
 
@@ -131,4 +126,17 @@ Los registros que no cumplen se eliminan de `commerce` y se registran en `commer
 
 ## Configuración
 
-Connection string y clave JWT en `backend/IRoute.Api/appsettings.json`. Las credenciales (`sa` / `IRoute_Pass123!`, `admin` / `admin123`) y la clave JWT son solo para desarrollo local; en producción deben venir de variables de entorno o un gestor de secretos.
+Connection string y clave JWT en `backend/IRoute.Api/appsettings.json`. Credenciales de la práctica:
+
+| Recurso | Usuario | Contraseña |
+|---|---|---|
+| SQL Server | `sa` | `IRoute_Pass123!` |
+| Aplicación web | `admin` | `admin123` |
+
+## Solución de problemas
+
+- **`401` al cargar o procesar:** la sesión expiró (dura 60 min). Vuelve a iniciar sesión.
+- **No puedo iniciar sesión con `admin`:** no se cargó `02_auth.sql` antes de iniciar la API. Cárgalo y reinicia la API.
+- **Error de conexión a la base:** SQL Server tarda unos segundos en arrancar. Revisa con `docker logs iroute-sql`.
+- **Puerto ocupado:** la API usa el 5009, Angular el 4200 y SQL Server el 1433.
+- **El front no conecta con la API:** el CORS solo permite `http://localhost:4200`, y la URL de la API está en `frontend/src/app/core/commerce.service.ts` y `auth.service.ts`.
